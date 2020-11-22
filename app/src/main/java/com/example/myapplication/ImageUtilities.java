@@ -73,15 +73,6 @@ public class ImageUtilities {
         return out;
     }
 
-    /**
-     * Returns a transformation matrix from one reference frame into another.
-     * Handles cropping (if maintaining aspect ratio is desired) and rotation.
-     * sourceWidth- Width of source frame.
-     * sourceHeight - Height of source frame.
-     * destinationWidth - Width of destination frame.
-     *  destinationHeight - Height of destination frame.
-     * applyRotation - Amount of rotation to apply from one frame to another.
-     */
     public static int getYUVByteSize(final int width, final int height) {
         // The luminance plane requires 1 byte per pixel.
         final int ySize = width * height;
@@ -93,6 +84,15 @@ public class ImageUtilities {
         return ySize + uvSize;
     }
 
+    /*
+     returns a transformation matrix from one reference frame into another.
+     handles cropping (if maintaining aspect ratio is desired) and rotation.
+     sourceWidth- Width of source frame.
+     sourceHeight - Height of source frame.
+     destinationWidth - Width of destination frame.
+     destinationHeight - Height of destination frame.
+     applyRotation - Amount of rotation to apply from one frame to another.
+     */
     public static Matrix getTransformationMatrix(int sourceWidth, int sourceHeight, int destinationWidth, int destinationHeight, int applyRotation, boolean maintainAspectRatio) {
         Matrix matrix = new Matrix();
 
