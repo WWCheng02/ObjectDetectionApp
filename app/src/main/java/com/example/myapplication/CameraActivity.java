@@ -2,9 +2,7 @@ package com.example.myapplication;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -12,25 +10,20 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Bundle;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.view.WindowManager;
 import android.widget.Toast;
-import com.example.myapplication.Camera2BasicFragment;
-import com.example.myapplication.OverlayView;
 
 public abstract class CameraActivity extends Activity
         implements OnImageAvailableListener {
     private static final String LOGGING_TAG = "Application";
     private static final int PERMISSIONS_REQUEST = 1;
-    private boolean useCamera2API;
     private Handler handler;
     private HandlerThread handlerThread;
     private  int previewHeight=0;
@@ -111,7 +104,7 @@ public abstract class CameraActivity extends Activity
         }
     }
 
-    // Returns true if the device supports the required hardware level, or better.
+    // Returns true if the device supports the required hardware level
     private boolean isHardwareLevelSupported(
             CameraCharacteristics characteristics, int requiredLevel) {
         int deviceLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
@@ -128,7 +121,7 @@ public abstract class CameraActivity extends Activity
             for (final String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-                // We don't use a front facing camera in this sample.
+                // don't use a front facing camera
                 final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
