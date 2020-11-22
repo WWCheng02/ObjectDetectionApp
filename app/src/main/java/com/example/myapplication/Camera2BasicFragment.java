@@ -76,7 +76,7 @@ public class Camera2BasicFragment extends Fragment {
     private static  String LOGGING_TAG = Camera2BasicFragment.class.getName();
     private static  Size WANTED_PREVIEW_SIZE = new Size(720, 480);
 
-    
+
     @Override
     public View onCreateView( LayoutInflater inflater,  ViewGroup container,  Bundle savedInstanceState) {
         return inflater.inflate(R.layout.camera2_fragment, container, false);
@@ -147,7 +147,6 @@ public class Camera2BasicFragment extends Fragment {
                 WANTED_PREVIEW_SIZE.getHeight()), MINIMUM_PREVIEW_SIZE);
         Log.i(LOGGING_TAG, "Min size: " + minSize);
 
-        // Collect the supported resolutions that are at least as big as the preview Surface
          List<Size> bigEnough = new ArrayList();
          List<Size> tooSmall = new ArrayList<Size>();
         for ( Size option : choices) {
@@ -161,7 +160,7 @@ public class Camera2BasicFragment extends Fragment {
                 tooSmall.add(option);
             }
         }
-        // Pick the smallest of those, assuming we found any
+        // Pick the smallest
         Size chosenSize = (bigEnough.size() > 0) ? Collections.min(bigEnough, new CompareSizesByArea(  )) : choices[0];
 
         Log.i(LOGGING_TAG, "Desired size: " + WANTED_PREVIEW_SIZE + ", min size: " + minSize + "x" + minSize);
@@ -169,7 +168,7 @@ public class Camera2BasicFragment extends Fragment {
         Log.i(LOGGING_TAG, "Rejected preview sizes: [" + TextUtils.join(", ", tooSmall) + "]");
         Log.i(LOGGING_TAG, "Chosen preview size: " + chosenSize);
 
-        //return new Size(WANTED_PREVIEW_SIZE.getHeight(), WANTED_PREVIEW_SIZE.getWidth());
+        //return new Size
         return chosenSize;
     }
 
@@ -201,13 +200,11 @@ public class Camera2BasicFragment extends Fragment {
                 sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 Log.i(LOGGING_TAG, "Sensor Orientation: " + sensorOrientation);
 
-                // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
-                // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-                // garbage capture data.
+
                 previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class));
 
 
-                // We fit the aspect ratio of TextureView to the size of preview we picked.
+                // We fit the aspect ratio of TextureView to the size of preview we picked
                  int orientation = getResources().getConfiguration().orientation;
                 Log.i(LOGGING_TAG, "Resource Orientation: " + orientation);
 
@@ -278,9 +275,7 @@ public class Camera2BasicFragment extends Fragment {
         }
     }
 
-    /**
-     * Closes the current {@link CameraDevice}.
-     */
+    //Close camera
     private void closeCamera() {
         try {
             cameraOpenCloseLock.acquire();
@@ -325,29 +320,27 @@ public class Camera2BasicFragment extends Fragment {
              SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
 
-            // We configure the size of default buffer to be the size of camera preview we want.
+            // configure the size of default buffer to be the size of camera preview wanted
             texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
 
-            // This is the output Surface we need to start preview.
+            // This is the output Surface we need to start preview
              Surface surface = new Surface(texture);
 
-            // We set up a CaptureRequest.Builder with the output Surface.
+            // set up a CaptureRequest.Builder with the output Surface
             previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewRequestBuilder.addTarget(surface);
 
             Log.i(LOGGING_TAG, String.format("Opening camera preview: "
                     + previewSize.getWidth() + "x" + previewSize.getHeight()));
 
-            // Create the reader for the preview frames.
+            // Create the reader for the preview frames
             previewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(),
                     ImageFormat.YUV_420_888, 2);
 
             previewReader.setOnImageAvailableListener(imageListener, backgroundHandler);
             previewRequestBuilder.addTarget(previewReader.getSurface());
 
-            //fixDeviceCameraOrientation(previewRequestBuilder);
-
-            // Here, we create a CameraCaptureSession for camera preview.
+            // create a CameraCaptureSession for camera preview
             cameraDevice.createCaptureSession(Arrays.asList(surface, previewReader.getSurface()),
                     getCaptureSessionStateCallback(), null);
         } catch ( CameraAccessException ex) {
@@ -360,24 +353,22 @@ public class Camera2BasicFragment extends Fragment {
 
             @Override
             public void onConfigured( CameraCaptureSession cameraCaptureSession) {
-                // The camera is already closed
+                // camera is closed
                 if (null == cameraDevice) {
                     return;
                 }
 
-                // When the session is ready, we start displaying the preview.
+                // session is ready, displaying the preview
                 captureSession = cameraCaptureSession;
                 try {
-                    // Auto focus should be continuous for camera preview.
+                    // Auto focus should be continuous for camera preview
                     previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                    // Flash is automatically enabled when necessary.
+                    // Flash is automatically enabled when necessary
                     previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                             CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
-                    //fixDeviceCameraOrientation(previewRequestBuilder);
-
-                    // ly, we start displaying the camera preview.
+                    // start displaying the camera preview
                     previewRequest = previewRequestBuilder.build();
                     captureSession.setRepeatingRequest(previewRequest, null, backgroundHandler);
                 } catch ( CameraAccessException ex) {

@@ -1,30 +1,19 @@
 package com.example.myapplication;
 
 import android.annotation.SuppressLint;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.media.Image;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
-import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
 
-import com.example.myapplication.ImageClassifier;
-import com.example.myapplication.TFObjectDetectionAPIModel;
-import com.example.myapplication.OverlayView;
-import com.example.myapplication.ImageUtilities;
-
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 
 public class MainActivity extends CameraActivity implements OnImageAvailableListener {
@@ -34,7 +23,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
     private static String modelFilename="detect.tflite";
     private static String labelFilename= "file:///android_asset/labelmap.txt";
     private static int inputSize=300;
-
+    private boolean TF_OD_API_IS_QUANTIZED=true;
     private Integer sensorOrientation;
     private int previewWidth = 0;
     private int previewHeight = 0;
@@ -63,7 +52,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
                 TEXT_SIZE_DIP, getResources().getDisplayMetrics());
 
         try {
-            model = (TFObjectDetectionAPIModel) TFObjectDetectionAPIModel.create(getAssets());
+            model = (TFObjectDetectionAPIModel) TFObjectDetectionAPIModel.create(getAssets(),modelFilename, labelFilename, inputSize, TF_OD_API_IS_QUANTIZED);
             Log.i(LOGGING_TAG, "Model Initiated successfully.");
             Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show();
         } catch(IOException e) {

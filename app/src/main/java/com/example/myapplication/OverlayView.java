@@ -43,7 +43,7 @@ public class OverlayView extends View {
         // when got results
         if (results !=null){
             for (int i=0; i<results.size(); i++){
-                if (results.get(i).getConfidence() > 0.5) {
+                if (results.get(i).getConfidence() > 0.6) {
                     RectF box = reCalcSize(results.get(i).getLocation());
                     String title = results.get(i).getTitle() + String.format(" %2.2f", results.get(i).getConfidence()*100) + "%";
                     paint.setColor(Color.BLUE); //color of text
