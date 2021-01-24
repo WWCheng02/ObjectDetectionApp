@@ -53,18 +53,19 @@ public class Camera2BasicFragment extends Fragment {
     private AutoFitTextureView textureView;//// autofit texture view
     private CameraCaptureSession captureSession; //camera capture session
     private CameraDevice cameraDevice; //camera device
-    private Size previewSize;
-    private Integer sensorOrientation;
+    private Size previewSize; //size for camera preview
+    private Integer sensorOrientation; //rotation degree of camera sensor in display
     private HandlerThread backgroundThread;//thread run the task
     private Handler backgroundHandler; //to run task in background
     private ImageReader previewReader; //image capture
     private CaptureRequest.Builder previewRequestBuilder; //camera preview
     private CaptureRequest previewRequest; //preview request
     private  Semaphore cameraOpenCloseLock = new Semaphore(1);//// prevent app from exiting when closing the camera
-    private OnImageAvailableListener imageListener;
+    private OnImageAvailableListener imageListener; //receive frame
     private ConnectionListener cameraConnectionListener;
-    private static  int MINIMUM_PREVIEW_SIZE = 500;
+    private static  int MIN_PREVIEW_SIZE = 500;
 
+    //convert screen rotation to JPEG orientation
     private static  SparseIntArray ORIENTATIONS = new SparseIntArray(4);
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -75,7 +76,6 @@ public class Camera2BasicFragment extends Fragment {
 
     private static  String LOGGING_TAG = Camera2BasicFragment.class.getName();
     private static  Size WANTED_PREVIEW_SIZE = new Size(720, 480);
-
 
     @Override
     public View onCreateView( LayoutInflater inflater,  ViewGroup container,  Bundle savedInstanceState) {
@@ -97,6 +97,7 @@ public class Camera2BasicFragment extends Fragment {
         super.onResume();
         startBackgroundThread();
 
+        //when screen is off then on again, SurfaceTexture is already exist, so only open camera without calling it again
         if (textureView.isAvailable()) {
             openCamera(textureView.getWidth(), textureView.getHeight());
         } else {
@@ -139,37 +140,37 @@ public class Camera2BasicFragment extends Fragment {
     }
 
     public interface ConnectionListener {
-        void onPreviewSizeChosen(Size size, int cameraRotation);
+        void onPreviewSizeSelected(Size size, int cameraRotation);
     }
 
-    private static Size chooseOptimalSize( Size[] choices) {
-         int minSize = Math.max(Math.min(WANTED_PREVIEW_SIZE.getWidth(),
-                WANTED_PREVIEW_SIZE.getHeight()), MINIMUM_PREVIEW_SIZE);
+    private static Size selectOptimalSize( Size[] choices) {
+        int minSize = Math.max(Math.min(WANTED_PREVIEW_SIZE.getWidth(), WANTED_PREVIEW_SIZE.getHeight()), MIN_PREVIEW_SIZE);
         Log.i(LOGGING_TAG, "Min size: " + minSize);
 
-         List<Size> bigEnough = new ArrayList();
-         List<Size> tooSmall = new ArrayList<Size>();
-        for ( Size option : choices) {
+         List<Size> biggerSize = new ArrayList(); //to store size that is bigger than wanted
+         List<Size> smallerSize = new ArrayList<Size>(); //store size that is smaller than wanted
+         for (Size option : choices) {
             if (option.equals(WANTED_PREVIEW_SIZE)) {
                 return WANTED_PREVIEW_SIZE;
             }
 
+            //if size larger than wanted
             if (option.getHeight() >= minSize && option.getWidth() >= minSize) {
-                bigEnough.add(option);
+                biggerSize.add(option);
             } else {
-                tooSmall.add(option);
+                smallerSize.add(option);
             }
         }
-        // Pick the smallest
-        Size chosenSize = (bigEnough.size() > 0) ? Collections.min(bigEnough, new CompareSizesByArea(  )) : choices[0];
+        // Pick the smallest bigger than wanted size
+        Size sizeChoose = (biggerSize.size() > 0) ? Collections.min(biggerSize, new CompareSizesByArea(  )) : choices[0];
 
         Log.i(LOGGING_TAG, "Desired size: " + WANTED_PREVIEW_SIZE + ", min size: " + minSize + "x" + minSize);
-        Log.i(LOGGING_TAG, "Valid preview sizes: [" + TextUtils.join(", ", bigEnough) + "]");
-        Log.i(LOGGING_TAG, "Rejected preview sizes: [" + TextUtils.join(", ", tooSmall) + "]");
-        Log.i(LOGGING_TAG, "Chosen preview size: " + chosenSize);
+        Log.i(LOGGING_TAG, "Valid preview sizes: [" + TextUtils.join(", ", biggerSize) + "]");
+        Log.i(LOGGING_TAG, "Rejected preview sizes: [" + TextUtils.join(", ", smallerSize) + "]");
+        Log.i(LOGGING_TAG, "Chosen preview size: " + sizeChoose);
 
-        //return new Size
-        return chosenSize;
+        //return chosen Size
+        return sizeChoose;
     }
 
     private void showToast( String text) {
@@ -182,10 +183,11 @@ public class Camera2BasicFragment extends Fragment {
     private void setUpCameraOutputs() {
          CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
+            //get a list of cameras
             for ( String cameraId : manager.getCameraIdList()) {
                  CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-                // We don't use a front facing camera in this sample.
+                // dun use front camera
                  Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
                     continue;
@@ -201,10 +203,10 @@ public class Camera2BasicFragment extends Fragment {
                 Log.i(LOGGING_TAG, "Sensor Orientation: " + sensorOrientation);
 
 
-                previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class));
+                previewSize = selectOptimalSize(map.getOutputSizes(SurfaceTexture.class));
 
 
-                // We fit the aspect ratio of TextureView to the size of preview we picked
+                // fit the aspect ratio of TextureView to the size of preview picked
                  int orientation = getResources().getConfiguration().orientation;
                 Log.i(LOGGING_TAG, "Resource Orientation: " + orientation);
 
@@ -224,15 +226,16 @@ public class Camera2BasicFragment extends Fragment {
             throw new IllegalStateException(("This device does not support Camera2 API"));
         }
 
-        cameraConnectionListener.onPreviewSizeChosen(previewSize, sensorOrientation);
+        cameraConnectionListener.onPreviewSizeSelected(previewSize, sensorOrientation);
     }
 
+    //open camera
     private void openCamera( int width,  int height) {
         setUpCameraOutputs();
         configureTransform(width, height);
-         Activity activity = getActivity();
+        Activity activity = getActivity();
 
-         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
@@ -241,7 +244,7 @@ public class Camera2BasicFragment extends Fragment {
                 manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                     @Override
                     public void onOpened( CameraDevice cameraDevice) {
-                        // This method is called when the camera is opened.  We start camera preview here.
+                        // preview then camera opened
                         cameraOpenCloseLock.release();
                         Camera2BasicFragment.this.cameraDevice = cameraDevice;
                         createCameraPreviewSession();
@@ -271,7 +274,7 @@ public class Camera2BasicFragment extends Fragment {
         } catch ( CameraAccessException ex) {
             Log.e(LOGGING_TAG, "Exception: " + ex.getMessage());
         } catch ( InterruptedException ex) {
-            throw new RuntimeException("Interrupted while trying to lock camera opening.", ex);
+            throw new RuntimeException("Interrupted when trying to lock camera opening", ex);
         }
     }
 
@@ -292,18 +295,20 @@ public class Camera2BasicFragment extends Fragment {
                 previewReader = null;
             }
         } catch ( InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
+            throw new RuntimeException("Interrupted when trying to lock camera closing.", e);
         }  {
             cameraOpenCloseLock.release();
         }
     }
 
+    //start background thread
     private void startBackgroundThread() {
         backgroundThread = new HandlerThread("ImageListener");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
 
+    //stop background thread
     private void stopBackgroundThread() {
         backgroundThread.quitSafely();
         try {
@@ -315,34 +320,32 @@ public class Camera2BasicFragment extends Fragment {
         }
     }
 
+    //create new camera preview session
     private void createCameraPreviewSession() {
         try {
              SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
 
-            // configure the size of default buffer to be the size of camera preview wanted
+            // configure default buffer size to wanted camera preview size
             texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
 
-            // This is the output Surface we need to start preview
+            // output Surface need to start preview
              Surface surface = new Surface(texture);
 
-            // set up a CaptureRequest.Builder with the output Surface
+            // set up CaptureRequest.Builder with the output Surface
             previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewRequestBuilder.addTarget(surface);
 
-            Log.i(LOGGING_TAG, String.format("Opening camera preview: "
-                    + previewSize.getWidth() + "x" + previewSize.getHeight()));
+            Log.i(LOGGING_TAG, String.format("Opening camera preview: " + previewSize.getWidth() + "x" + previewSize.getHeight()));
 
-            // Create the reader for the preview frames
-            previewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(),
-                    ImageFormat.YUV_420_888, 2);
+            // Create reader for the preview frames
+            previewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
 
             previewReader.setOnImageAvailableListener(imageListener, backgroundHandler);
             previewRequestBuilder.addTarget(previewReader.getSurface());
 
-            // create a CameraCaptureSession for camera preview
-            cameraDevice.createCaptureSession(Arrays.asList(surface, previewReader.getSurface()),
-                    getCaptureSessionStateCallback(), null);
+            // create CameraCaptureSession for camera preview
+            cameraDevice.createCaptureSession(Arrays.asList(surface, previewReader.getSurface()), getCaptureSessionStateCallback(), null);
         } catch ( CameraAccessException ex) {
             Log.e(LOGGING_TAG, "Exception: " + ex.getMessage());
         }
@@ -362,11 +365,9 @@ public class Camera2BasicFragment extends Fragment {
                 captureSession = cameraCaptureSession;
                 try {
                     // Auto focus should be continuous for camera preview
-                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-                            CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
                     // Flash is automatically enabled when necessary
-                    previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                    previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
                     // start displaying the camera preview
                     previewRequest = previewRequestBuilder.build();
@@ -383,6 +384,7 @@ public class Camera2BasicFragment extends Fragment {
         };
     }
 
+    //configure transformation to TextureView
     private void configureTransform( int viewWidth,  int viewHeight) {
          Activity activity = getActivity();
         if (null == textureView || null == previewSize || null == activity) {
@@ -398,9 +400,7 @@ public class Camera2BasicFragment extends Fragment {
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
              float scale =
-                    Math.max(
-                            (float) viewHeight / previewSize.getHeight(),
-                            (float) viewWidth / previewSize.getWidth());
+                    Math.max((float) viewHeight / previewSize.getHeight(), (float) viewWidth / previewSize.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         } else if (Surface.ROTATION_180 == rotation) {
@@ -410,19 +410,18 @@ public class Camera2BasicFragment extends Fragment {
     }
 
     private void fixDeviceCameraOrientation(CaptureRequest.Builder previewRequestBuilder) {
-         int deviceRotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
-        int jpegOrientation =
-                (ORIENTATIONS.get(deviceRotation) + sensorOrientation + 270) % 360;
+        int deviceRotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
+        int jpegOrientation = (ORIENTATIONS.get(deviceRotation) + sensorOrientation + 270) % 360;
         previewRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION, jpegOrientation);
 
     }
 
+    //compare area of sizes
     static class CompareSizesByArea implements Comparator<Size> {
         @Override
         public int compare( Size lhs,  Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight()
-                    - (long) rhs.getWidth() * rhs.getHeight());
+            // cast to ensure the multiplications won't overflow
+            return Long.signum((long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
         }
     }
 }

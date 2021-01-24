@@ -19,9 +19,10 @@ public interface ImageClassifier {
         //confidence score
         private final Float confidence;
 
-        //location
+        //location of detected object
         private RectF location;
 
+        //constructor
         public Recognition(String id, String title, Float confidence, RectF location) {
             this.id = id;
             this.title = title;
@@ -68,7 +69,7 @@ public interface ImageClassifier {
                 resultString += location + " ";
             }
 
-            return resultString.trim(); //trim white space from both ends of string
+            return resultString.trim(); //trim white space of both ends of string
         }
     }
 
