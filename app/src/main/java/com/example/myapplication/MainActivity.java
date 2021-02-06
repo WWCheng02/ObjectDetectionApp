@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import com.example.myapplication.CameraActivity;
 
 
 public class MainActivity extends CameraActivity implements OnImageAvailableListener {
@@ -56,7 +57,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
     private Logger LOGGER = new Logger();
     //private ImageClassifier classifier;
     ImageClassifier classifier;
-    private TextToSpeech tts;
+    TextToSpeech tts;
     private String moving = "";
     private List<ImageClassifier.Recognition> prevrecogs;
 
@@ -85,6 +86,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
             cropSize= MODEL_IMAGE_INPUT_SIZE;
             Log.i(LOGGING_TAG, "Model initiated successfully"); //display message when model initiated successfully
             Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully
+
         } catch(IOException e) {
             e.printStackTrace();
             Toast.makeText(getApplicationContext(), "Detector cannot be opened", Toast.LENGTH_SHORT).show(); //display toast when detector cannot be opened correctly

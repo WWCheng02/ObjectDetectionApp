@@ -11,6 +11,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -26,16 +27,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Toast;
 
+
+import androidx.annotation.Dimension;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,7 +85,8 @@ public class Camera2BasicFragment extends Fragment {
     }
 
     private static  String LOGGING_TAG = Camera2BasicFragment.class.getName();
-    private static  Size WANTED_PREVIEW_SIZE = new Size(720, 480);
+
+    private static  Size WANTED_PREVIEW_SIZE = new Size(Resources.getSystem().getDisplayMetrics().heightPixels, Resources.getSystem().getDisplayMetrics().heightPixels); //width, height
 
     @Override
     public View onCreateView( LayoutInflater inflater,  ViewGroup container,  Bundle savedInstanceState) {

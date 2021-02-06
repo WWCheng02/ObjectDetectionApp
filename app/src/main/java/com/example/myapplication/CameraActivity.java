@@ -71,6 +71,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
                     LOGGER.i("onCreate", "TextToSpeech is initialised");
+                    tts.speak("Detector opened", TextToSpeech.QUEUE_FLUSH,null);
                 } else {
                     LOGGER.e("onCreate", "Cannot initialise text to speech!");
                 }
@@ -384,10 +385,16 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
     private void speak() {
 
-        final double rightStart = previewWidth / 2 - 0.10 * previewWidth;
-        final double rightFinish = previewWidth;
-        final double letStart = 0;
-        final double leftFinish = previewWidth / 2 + 0.10 * previewWidth;
+        //w=960, h=720 (bcs rotated)
+        //horizontal start from right to left
+        final double rightStart = 0;
+        final double rightFinish = previewHeight/3;
+        final double middleStart=rightFinish;
+        final double middleEnd=previewHeight*2/3;
+        final double leftStart = middleEnd;
+        final double leftFinish = previewHeight;
+
+
         final double previewArea = previewWidth * previewHeight;
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -396,20 +403,31 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             ImageClassifier.Recognition recognition = currentRecognitions.get(i);
             stringBuilder.append(recognition.getTitle());
 
-            float start = recognition.getLocation().top;
-            float end = recognition.getLocation().bottom;
-            double objArea = recognition.getLocation().width() * recognition.getLocation().height();
+            float start = recognition.getLocation().bottom;
 
-            if (objArea > previewArea / 2) {
+            float end = recognition.getLocation().top;
+
+            /*Toast.makeText(getApplicationContext(), "left="+recognition.getLocation().left + " top=" + recognition.getLocation().top
+                    +"\nright="+recognition.getLocation().right+" bottm="+recognition.getLocation().bottom+"\npreview width="+previewWidth+" height"+previewHeight, Toast.LENGTH_SHORT).show();*/
+            float center= (start+end)/2; //to calculate center point of the object
+
+            double objectArea = recognition.getLocation().width() * recognition.getLocation().height();
+
+            //if object occupy 70% of screen
+            if (objectArea > previewArea*0.70) {
                 stringBuilder.append(" in front of you ");
             } else {
 
-
-                if (start > letStart && end < leftFinish) {
+                if (center >= leftStart && center <= leftFinish) {
                     stringBuilder.append(" on the left ");
-                } else if (start > rightStart && end < rightFinish) {
+                }
+                else if (center >= rightStart && center <= rightFinish) {
                     stringBuilder.append(" on the right ");
-                } else {
+                }
+                else if (center> middleStart && center< middleEnd){
+                    stringBuilder.append(" is straight forward");
+                }
+                else {
                     stringBuilder.append(" in front of you ");
                 }
             }
@@ -418,7 +436,6 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                 stringBuilder.append(" and ");
             }
         }
-        stringBuilder.append(" detected.");
 
         tts.speak(stringBuilder.toString(), TextToSpeech.QUEUE_FLUSH, null);
     }
