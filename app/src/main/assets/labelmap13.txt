@@ -1,0 +1,16 @@
+???
+person
+bus
+train
+backpack
+suitcase
+surfboard
+cup
+
+knife
+apple
+chair
+bed
+toilet
+
+laptop
