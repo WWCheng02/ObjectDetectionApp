@@ -4,6 +4,7 @@ import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
+import android.os.Trace;
 import android.util.Log;
 
 import org.tensorflow.lite.Interpreter;
@@ -26,8 +27,8 @@ import java.util.Vector;
 public class TFObjectDetectionAPIModel implements ImageClassifier {
     private int inputSize;
     private static final String LOGGING_TAG = TFObjectDetectionAPIModel.class.getName();
-    private static final float IMAGE_MEAN = 128f;
-    private static final float IMAGE_STD = 128f;
+    private static final float IMAGE_MEAN = 127.5f;
+    private static final float IMAGE_STD = 127.5f;
     private static final int NUM_DETECTIONS = 10; //maximum return 10 results
 
     private boolean isModelQuantized;
@@ -102,6 +103,9 @@ public class TFObjectDetectionAPIModel implements ImageClassifier {
 
     @Override
     public List<ImageClassifier.Recognition> detectObjects(final Bitmap bitmap) {
+        Trace.beginSection("recognizeImage");
+
+        Trace.beginSection("preprocessBitmap");
         //process image from int to float
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
@@ -121,6 +125,7 @@ public class TFObjectDetectionAPIModel implements ImageClassifier {
                 }
             }
         }
+        Trace.endSection();
 
         Object[] inputArray = {imageData};
         Map<Integer, Object> outputMap = new HashMap<>();
@@ -128,9 +133,9 @@ public class TFObjectDetectionAPIModel implements ImageClassifier {
         outputMap.put(1, outputClass);
         outputMap.put(2, outputConfidenceScore);
         outputMap.put(3, detectionsNo);
-
+        Trace.beginSection("run");
         tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-
+        int numDetectionsOutput = Math.min(NUM_DETECTIONS, (int) detectionsNo[0]);
         final ArrayList<Recognition> recognitions = new ArrayList<>(NUM_DETECTIONS); //to store a list of objects detected
         for (int i = 0; i < NUM_DETECTIONS; ++i) {
             final RectF detection =
@@ -150,6 +155,7 @@ public class TFObjectDetectionAPIModel implements ImageClassifier {
                             outputConfidenceScore[0][i], //confidence score
                             detection)); //location of boundary box
         }
+        Trace.endSection();
         return recognitions;
     }
 

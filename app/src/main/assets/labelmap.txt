@@ -1,91 +1,42 @@
 ???
-person
-bicycle
-car
-motorcycle
-airplane
-bus
-train
-truck
-boat
-traffic light
-fire hydrant
-???
-stop sign
-parking meter
-bench
-bird
-cat
-dog
-horse
-sheep
-cow
-elephant
-bear
-zebra
-giraffe
-???
-backpack
-umbrella
-???
-???
-handbag
-tie
-suitcase
-frisbee
-skis
-snowboard
-sports ball
-kite
-baseball bat
-baseball glove
-skateboard
-surfboard
-tennis racket
-bottle
-???
-wine glass
-cup
-fork
-knife
-spoon
-bowl
-banana
-apple
-sandwich
-orange
-broccoli
-carrot
-hot dog
-pizza
-donut
-cake
-chair
-couch
-potted plant
+bag
+ball
 bed
-???
-dining table
-???
-???
-toilet
-???
-tv
-laptop
-mouse
-remote
-keyboard
+bench
+bicycle
+bin
+bus
+bottle
+car
+cat
 cell phone
-microwave
-oven
-toaster
-sink
-refrigerator
-???
-book
+chair
 clock
-vase
+computer
+couch
+dog
+door
+fan
+knife
+motorcycle
+mouse
+person
+plush toy
+potted plant
+refrigerator
+street lamp
 scissors
-teddy bear
-hair drier
-toothbrush
+shelf
+sink
+staircase
+skateboard
+street sign
+table
+toilet
+tree
+truck
+train
+umbrella
+vase
+window
+
