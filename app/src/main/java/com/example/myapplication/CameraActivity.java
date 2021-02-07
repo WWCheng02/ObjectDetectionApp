@@ -23,7 +23,9 @@ import android.os.Trace;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import java.nio.ByteBuffer;
@@ -59,12 +61,40 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
         setContentView(R.layout.activity_main);
 
+        Button playStopButton = findViewById(R.id.btnPlaySpeech);
+        playStopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(getApplicationContext(), "Click button", Toast.LENGTH_SHORT).show();
+                if (tts != null) {
+                    if (tts.isSpeaking()) {
+                        tts.stop(); //stop just stop the current recognition, so need shutdown
+                        tts.shutdown();
+
+                    }
+                    else{
+                        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+                            @Override
+                            public void onInit(int status) {
+                                if (status == TextToSpeech.SUCCESS) {
+                                    LOGGER.i("onCreate", "TextToSpeech is initialised");
+                                } else {
+                                    LOGGER.e("onCreate", "Cannot initialise text to speech!");
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+
         //if has permission
         if (hasPermission()) {
             setFragment();
         } else {
             requestPermission(); //no permission then make request
         }
+
 
         this.tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
@@ -80,6 +110,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
 
     }
+    
 
     protected int[] getRgbBytes() {
         imageConverter.run();
