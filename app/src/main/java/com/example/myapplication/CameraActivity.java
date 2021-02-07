@@ -110,7 +110,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
 
     }
-    
+
 
     protected int[] getRgbBytes() {
         imageConverter.run();
