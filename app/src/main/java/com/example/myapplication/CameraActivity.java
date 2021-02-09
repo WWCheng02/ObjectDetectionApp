@@ -28,6 +28,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.appcompat.widget.Toolbar;
+
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,6 +54,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     private Runnable postInferenceCallback;
     public TextToSpeech tts;
 
+
     //create camera activity
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -61,7 +64,14 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
         setContentView(R.layout.activity_main);
 
+        //Toolbar appToolbar=findViewById(R.id.appToolbar);
+
+
+
+
+
         Button playStopButton = findViewById(R.id.btnPlaySpeech);
+        //Button speechRateButton = findViewById(R.id.button2);
         playStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -467,8 +477,8 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                 stringBuilder.append(" and ");
             }
         }
-
         tts.speak(stringBuilder.toString(), TextToSpeech.QUEUE_FLUSH, null);
+        tts.playSilentUtterance(3000,TextToSpeech.QUEUE_ADD, null); // to add 3 seconds interval to prevent annoying (also counted as "is speaking")
     }
 
 }
