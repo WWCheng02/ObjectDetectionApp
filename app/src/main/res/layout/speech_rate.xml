@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent"
+    android:background="#E4D8DC"
+    android:orientation="vertical"
+    tools:context="com.example.myapplication.CameraActivity">
+
+    <LinearLayout
+        android:layout_width="488dp"
+        android:layout_height="759dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="43dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/slowButton"
+            android:layout_width="match_parent"
+            android:layout_height="146dp"
+            android:layout_marginBottom="15dp"
+            android:text="Slow"
+            android:textSize="48sp" />
+
+        <Button
+            android:id="@+id/normalButton"
+            android:layout_width="match_parent"
+            android:layout_height="146dp"
+            android:layout_marginBottom="15dp"
+            android:text="Normal"
+            android:textSize="48sp" />
+
+        <Button
+            android:id="@+id/fastButton"
+            android:layout_width="match_parent"
+            android:layout_height="146dp"
+            android:text="Fast"
+            android:textSize="48sp" />
+
+    </LinearLayout>
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="496dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="-7dp"
+        android:layout_marginTop="-8dp"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:title="Adjust Speech Rate"
+        app:titleTextAppearance="@style/TextAppearance.AppCompat.Display1"
+        app:titleTextColor="#FFFFFF" />
+
+</RelativeLayout>

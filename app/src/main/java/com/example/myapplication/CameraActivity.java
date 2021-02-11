@@ -3,6 +3,7 @@ package com.example.myapplication;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -28,6 +29,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.nio.ByteBuffer;
@@ -53,7 +55,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     private int yRowStride;
     private Runnable postInferenceCallback;
     public TextToSpeech tts;
-
+    public float speechRate;
 
     //create camera activity
     @Override
@@ -71,6 +73,18 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
 
         Button playStopButton = findViewById(R.id.btnPlaySpeech);
+        Button speechRateButton = findViewById(R.id.button3);
+        speechRateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //openSpeechRateActivity();
+                Intent intent= new Intent(CameraActivity.this, SpeechRateActivity.class);
+                startActivityForResult(intent,1);
+
+
+            }
+
+        });
         //Button speechRateButton = findViewById(R.id.button2);
         playStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,6 +135,21 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode, requestCode, data);
+        if (requestCode==1){
+            if(resultCode==RESULT_OK){
+                speechRate= data.getFloatExtra("speechRateSelected",1);
+                Toast.makeText(getApplicationContext(), "Speech Rate :"+speechRate, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+/*
+    public void openSpeechRateActivity(){
+        Intent intent= new Intent(this, SpeechRateActivity.class);
+        startActivity(intent);
+    }*/
 
     protected int[] getRgbBytes() {
         imageConverter.run();
@@ -241,15 +270,20 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
         super.onStart();
     }
 
+
     @Override
     public synchronized void onPause() {
         LOGGER.d("onPause " + this);
 
         if (!isFinishing()) {
             LOGGER.d("Requesting finish");
-            finish();
+            //finish();
         }
 
+        if (!isFinishing()) {
+            LOGGER.d("Requesting finish");
+            onResume();
+        }
         handlerThread.quitSafely();
         try {
             handlerThread.join();
@@ -259,13 +293,14 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             LOGGER.e(e, "Exception!");
         }
 
-        if (tts != null) {
+        /*if (tts != null) {
             tts.stop();
             tts.shutdown();
-        }
+        }*/
 
         super.onPause();
     }
+
 
     @Override
     public synchronized void onStop() {
