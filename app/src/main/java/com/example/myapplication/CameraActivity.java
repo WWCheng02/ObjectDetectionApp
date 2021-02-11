@@ -142,6 +142,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             if(resultCode==RESULT_OK){
                 speechRate= data.getFloatExtra("speechRateSelected",1);
                 Toast.makeText(getApplicationContext(), "Speech Rate :"+speechRate, Toast.LENGTH_SHORT).show();
+                tts.setSpeechRate(speechRate);
             }
         }
     }

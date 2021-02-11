@@ -28,6 +28,28 @@ public class SpeechRateActivity extends Activity {
                 finish();
             }
         });
+
+        normalButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                speechRateSelected=1f;
+                Intent intent= new Intent();
+                intent.putExtra("speechRateSelected",speechRateSelected);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
+
+        fastButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                speechRateSelected=1.5f;
+                Intent intent= new Intent();
+                intent.putExtra("speechRateSelected",speechRateSelected);
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+        });
     }
 
 }
