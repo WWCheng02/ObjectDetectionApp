@@ -55,7 +55,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     private int yRowStride;
     private Runnable postInferenceCallback;
     public TextToSpeech tts;
-    public float speechRate;
+    public float speechRate=1f;
 
     //create camera activity
     @Override
@@ -67,10 +67,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
         setContentView(R.layout.activity_main);
 
         //Toolbar appToolbar=findViewById(R.id.appToolbar);
-
-
-
-
+        
 
         Button playStopButton = findViewById(R.id.btnPlaySpeech);
         Button speechRateButton = findViewById(R.id.button3);
@@ -102,6 +99,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                             public void onInit(int status) {
                                 if (status == TextToSpeech.SUCCESS) {
                                     LOGGER.i("onCreate", "TextToSpeech is initialised");
+                                    tts.setSpeechRate(speechRate);
                                 } else {
                                     LOGGER.e("onCreate", "Cannot initialise text to speech!");
                                 }
