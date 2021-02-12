@@ -32,7 +32,7 @@ public class SpeechRateActivity extends Activity {
         normalButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                speechRateSelected=1f;
+                speechRateSelected=1.0f;
                 Intent intent= new Intent();
                 intent.putExtra("speechRateSelected",speechRateSelected);
                 setResult(RESULT_OK, intent);
