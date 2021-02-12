@@ -24,7 +24,7 @@
         android:layout_alignParentTop="true"
         android:layout_marginStart="-7dp"
         android:layout_marginTop="-8dp"
-        android:background="?attr/colorPrimary"
+        android:background="?attr/colorPrimaryDark"
         android:minHeight="?attr/actionBarSize"
         android:theme="?attr/actionBarTheme"
         app:title="Object Recognition App"
@@ -75,9 +75,11 @@
             android:layout_marginRight="-10dp"
             android:layout_marginBottom="-10dp"
             android:layout_weight="0.5"
-            android:background="#3F51B5"
+            android:background="?attr/colorPrimaryDark"
             android:padding="0dp"
-            android:text=" Play/Stop Speech " />
+            android:text=" Play/Stop Speech "
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/button3"
@@ -92,8 +94,10 @@
             android:layout_marginRight="0dp"
             android:layout_marginBottom="0dp"
             android:layout_weight="0.5"
-            android:background="#9C27B0"
-            android:text="adjust speech rate" />
+            android:background="#FFFEFF"
+            android:text="adjust speech rate"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="18sp" />
     </LinearLayout>
 
 </RelativeLayout>
