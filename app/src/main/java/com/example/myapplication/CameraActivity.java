@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -55,7 +56,8 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
     private int yRowStride;
     private Runnable postInferenceCallback;
     public TextToSpeech tts;
-    public float speechRate=1f;
+    public float speechRate;
+    SharedPreferences sharedPreferences;
 
     //create camera activity
     @Override
@@ -66,8 +68,13 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
 
         setContentView(R.layout.activity_main);
 
+        sharedPreferences = getSharedPreferences("speechRate", MODE_PRIVATE);
+        //get speech rate from Shared preferences
+        float speechRate = sharedPreferences.getFloat("speechRate", 1f);
+
+
         //Toolbar appToolbar=findViewById(R.id.appToolbar);
-        
+
 
         Button playStopButton = findViewById(R.id.btnPlaySpeech);
         Button speechRateButton = findViewById(R.id.button3);
@@ -99,7 +106,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                             public void onInit(int status) {
                                 if (status == TextToSpeech.SUCCESS) {
                                     LOGGER.i("onCreate", "TextToSpeech is initialised");
-                                    tts.setSpeechRate(speechRate);
+                                    tts.setSpeechRate(sharedPreferences.getFloat("speechRate", 1f));
                                 } else {
                                     LOGGER.e("onCreate", "Cannot initialise text to speech!");
                                 }
@@ -123,6 +130,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             public void onInit(int status) {
                 if (status == TextToSpeech.SUCCESS) {
                     LOGGER.i("onCreate", "TextToSpeech is initialised");
+                    tts.setSpeechRate(speechRate);
                     tts.speak("Detector opened", TextToSpeech.QUEUE_FLUSH,null);
                 } else {
                     LOGGER.e("onCreate", "Cannot initialise text to speech!");
@@ -138,9 +146,18 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
         super.onActivityResult(requestCode, requestCode, data);
         if (requestCode==1){
             if(resultCode==RESULT_OK){
+                //get speech rate from previous activity
                 speechRate= data.getFloatExtra("speechRateSelected",1);
                 Toast.makeText(getApplicationContext(), "Speech Rate :"+speechRate, Toast.LENGTH_SHORT).show();
+                //save data by edit shared preferences
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                //add data into shared preferences
+                editor.putFloat("speechRate", speechRate);
+                //apply change to shared preferecnes
+                editor.apply();
+
                 tts.setSpeechRate(speechRate);
+
             }
         }
     }
