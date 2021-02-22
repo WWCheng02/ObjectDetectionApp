@@ -157,7 +157,14 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                 editor.apply();
 
                 tts.setSpeechRate(speechRate);
-
+                String speed;
+                if(speechRate==0.5)
+                    speed="slow";
+                else if (speechRate==1.0)
+                    speed="normal";
+                else
+                    speed="fast";
+                tts.speak("Speech rate is "+speed, TextToSpeech.QUEUE_FLUSH,null);
             }
         }
     }
