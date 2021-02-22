@@ -1,173 +1,207 @@
 package com.example.myapplication;
 
-import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.os.Trace;
-import android.util.Log;
 
-import org.tensorflow.lite.Interpreter;
+import com.example.myapplication.Logger;
+
+import org.tensorflow.Graph;
+import org.tensorflow.Operation;
+import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Vector;
 
+/**
+ * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
+ * github.com/tensorflow/models/tree/master/research/object_detection
+ */
 public class TFObjectDetectionAPIModel implements ImageClassifier {
+    private static final Logger LOGGER = new Logger();
+
+    // Only return this many results.
+    private static final int MAX_RESULTS = 500;
+
+    // Config values.
+    private String inputName;
     private int inputSize;
-    private static final String LOGGING_TAG = TFObjectDetectionAPIModel.class.getName();
-    private static final float IMAGE_MEAN = 127.5f;
-    private static final float IMAGE_STD = 127.5f;
-    private static final int NUM_DETECTIONS = 10; //maximum return 10 results
 
-    private boolean isModelQuantized;
-
-    private ByteBuffer imageData;
-    private Interpreter tfLite;
+    // Pre-allocated buffers.
+    private Vector<String> labels = new Vector<String>();
     private int[] intValues;
-    private float[][][] outputLocation; //array to store location of boundary boxes
-    private float[][] outputClass; //array to store classes of boundary box
-    private float[][] outputConfidenceScore; //array to store scores of boundary box
-    private float[] detectionsNo;//no of boundary box
-    private Vector<String> labels = new Vector<String>(); //pre allocated buffers
+    private byte[] byteValues;
+    private float[] outputLocations;
+    private float[] outputScores;
+    private float[] outputClasses;
+    private float[] outputNumDetections;
+    private String[] outputNames;
 
-    private TFObjectDetectionAPIModel() {
+    private boolean logStats = false;
 
-    }
+    private TensorFlowInferenceInterface inferenceInterface;
 
-    public static ImageClassifier create(AssetManager assetManager, String modelFilename, String labelFilename, int inputSize, boolean isQuantized)
-            throws IOException {
-        final TFObjectDetectionAPIModel model = new TFObjectDetectionAPIModel();
+    /**
+     * Initializes a native TensorFlow session for classifying images.
+     *
+     * @param assetManager The asset manager to be used to load assets.
+     * @param modelFilename The filepath of the model GraphDef protocol buffer.
+     * @param labelFilename The filepath of label file for classes.
+     */
+    public static ImageClassifier create(
+            final AssetManager assetManager,
+            final String modelFilename,
+            final String labelFilename,
+            final int inputSize) throws IOException {
+        final TFObjectDetectionAPIModel d = new TFObjectDetectionAPIModel();
 
-        //read model file
+        InputStream labelsInput = null;
         String actualFilename = labelFilename.split("file:///android_asset/")[1];
-        InputStream labelInput = assetManager.open(actualFilename);
-        BufferedReader br = new BufferedReader(new InputStreamReader(labelInput));
+        labelsInput = assetManager.open(actualFilename);
+        BufferedReader br = null;
+        br = new BufferedReader(new InputStreamReader(labelsInput));
         String line;
         while ((line = br.readLine()) != null) {
-            Log.w(LOGGING_TAG,line);
-            model.labels.add(line);
+            LOGGER.w(line);
+            d.labels.add(line);
         }
         br.close();
 
-        model.inputSize = inputSize;
 
-        try {
-            model.tfLite = new Interpreter(loadModelFile(assetManager, modelFilename));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        d.inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFilename);
+
+        final Graph g = d.inferenceInterface.graph();
+
+        d.inputName = "image_tensor";
+        // The inputName node has a shape of [N, H, W, C], where
+        // N is the batch size
+        // H = W are the height and width
+        // C is the number of channels (3 for our purposes - RGB)
+        final Operation inputOp = g.operation(d.inputName);
+        if (inputOp == null) {
+            throw new RuntimeException("Failed to find input Node '" + d.inputName + "'");
+        }
+        d.inputSize = inputSize;
+        // The outputScoresName node has a shape of [N, NumLocations], where N
+        // is the batch size.
+        final Operation outputOp1 = g.operation("detection_scores");
+        if (outputOp1 == null) {
+            throw new RuntimeException("Failed to find output Node 'detection_scores'");
+        }
+        final Operation outputOp2 = g.operation("detection_boxes");
+        if (outputOp2 == null) {
+            throw new RuntimeException("Failed to find output Node 'detection_boxes'");
+        }
+        final Operation outputOp3 = g.operation("detection_classes");
+        if (outputOp3 == null) {
+            throw new RuntimeException("Failed to find output Node 'detection_classes'");
         }
 
-        model.isModelQuantized = isQuantized;
         // Pre-allocate buffers.
-        int byteNoPerChannel;
-        if (isQuantized) {
-            byteNoPerChannel = 1; // Quantized
-        } else {
-            byteNoPerChannel = 4; // Floating point
-        }
-        model.imageData = ByteBuffer.allocateDirect(1 * model.inputSize * model.inputSize * 3 * byteNoPerChannel);
-        model.imageData.order(ByteOrder.nativeOrder());
-        model.intValues = new int[model.inputSize * model.inputSize];
-
-        model.outputLocation = new float[1][NUM_DETECTIONS][4]; //to store boundary box location
-        model.outputClass = new float[1][NUM_DETECTIONS]; //to store output class name
-        model.outputConfidenceScore = new float[1][NUM_DETECTIONS]; //to store confidence score
-        model.detectionsNo = new float[1]; //to store detected objects
-        return model;
+        d.outputNames = new String[] {"detection_boxes", "detection_scores",
+                "detection_classes", "num_detections"};
+        d.intValues = new int[d.inputSize * d.inputSize];
+        d.byteValues = new byte[d.inputSize * d.inputSize * 3];
+        d.outputScores = new float[MAX_RESULTS];
+        d.outputLocations = new float[MAX_RESULTS * 4];
+        d.outputClasses = new float[MAX_RESULTS];
+        d.outputNumDetections = new float[1];
+        return d;
     }
 
-    //load model file
-    private static MappedByteBuffer loadModelFile(AssetManager assets, String modelFilename)
-            throws IOException {
-        AssetFileDescriptor fileDescriptor = assets.openFd(modelFilename);
-        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-        FileChannel fileChannel = inputStream.getChannel();
-        long startOffset = fileDescriptor.getStartOffset();
-        long declaredLength = fileDescriptor.getDeclaredLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-    }
-
-
+    private TFObjectDetectionAPIModel() {}
 
     @Override
-    public List<ImageClassifier.Recognition> detectObjects(final Bitmap bitmap) {
+    public List<Recognition> detectObjects(final Bitmap bitmap) {
+        // Log this method so that it can be analyzed with systrace.
         Trace.beginSection("recognizeImage");
 
         Trace.beginSection("preprocessBitmap");
-        //process image from int to float
+        // Preprocess the image data from 0-255 int to normalized float based
+        // on the provided parameters.
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
-        imageData.rewind();
-        for (int i = 0; i < inputSize; ++i) {
-            for (int j = 0; j < inputSize; ++j) {
-                int pixelValue = intValues[i * inputSize + j];
-                if (isModelQuantized) {
-                    // Quantized model
-                    imageData.put((byte) ((pixelValue >> 16) & 0xFF));
-                    imageData.put((byte) ((pixelValue >> 8) & 0xFF));
-                    imageData.put((byte) (pixelValue & 0xFF));
-                } else { // Float model
-                    imageData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imageData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imageData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                }
-            }
+        for (int i = 0; i < intValues.length; ++i) {
+            byteValues[i * 3 + 2] = (byte) (intValues[i] & 0xFF);
+            byteValues[i * 3 + 1] = (byte) ((intValues[i] >> 8) & 0xFF);
+            byteValues[i * 3 + 0] = (byte) ((intValues[i] >> 16) & 0xFF);
         }
+        Trace.endSection(); // preprocessBitmap
+
+        // Copy the input data into TensorFlow.
+        Trace.beginSection("feed");
+        inferenceInterface.feed(inputName, byteValues, 1, inputSize, inputSize, 3);
         Trace.endSection();
 
-        Object[] inputArray = {imageData};
-        Map<Integer, Object> outputMap = new HashMap<>();
-        outputMap.put(0, outputLocation);
-        outputMap.put(1, outputClass);
-        outputMap.put(2, outputConfidenceScore);
-        outputMap.put(3, detectionsNo);
+        // Run the inference call.
         Trace.beginSection("run");
-        tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
-        int numDetectionsOutput = Math.min(NUM_DETECTIONS, (int) detectionsNo[0]);
-        final ArrayList<Recognition> recognitions = new ArrayList<>(NUM_DETECTIONS); //to store a list of objects detected
-        for (int i = 0; i < NUM_DETECTIONS; ++i) {
+        inferenceInterface.run(outputNames, logStats);
+        Trace.endSection();
+
+        // Copy the output Tensor back into the output array.
+        Trace.beginSection("fetch");
+        outputLocations = new float[MAX_RESULTS * 4];
+        outputScores = new float[MAX_RESULTS];
+        outputClasses = new float[MAX_RESULTS];
+        outputNumDetections = new float[1];
+        inferenceInterface.fetch(outputNames[0], outputLocations);
+        inferenceInterface.fetch(outputNames[1], outputScores);
+        inferenceInterface.fetch(outputNames[2], outputClasses);
+        inferenceInterface.fetch(outputNames[3], outputNumDetections);
+        Trace.endSection();
+
+        // Find the best detections.
+        final PriorityQueue<Recognition> pq =
+                new PriorityQueue<Recognition>(
+                        1,
+                        new Comparator<Recognition>() {
+                            @Override
+                            public int compare(final Recognition lhs, final Recognition rhs) {
+                                // Intentionally reversed to put high confidence at the head of the queue.
+                                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
+                            }
+                        });
+
+        // Scale them back to the input size.
+        for (int i = 0; i < outputScores.length; ++i) {
             final RectF detection =
                     new RectF(
-                            outputLocation[0][i][1] * inputSize,
-                            outputLocation[0][i][0] * inputSize,
-                            outputLocation[0][i][3] * inputSize,
-                            outputLocation[0][i][2] * inputSize);
-
-            //in label file, class labels start from 1 to no of classes + 1
-            //outputClass start from 0 to no of classes
-            int labelOffset = 1;
-            recognitions.add(
-                    new Recognition(
-                            "" + i, //id
-                            labels.get((int) outputClass[0][i] + labelOffset), //class
-                            outputConfidenceScore[0][i], //confidence score
-                            detection)); //location of boundary box
+                            outputLocations[4 * i + 1] * inputSize,
+                            outputLocations[4 * i] * inputSize,
+                            outputLocations[4 * i + 3] * inputSize,
+                            outputLocations[4 * i + 2] * inputSize);
+            pq.add(
+                    new Recognition("" + i, labels.get((int) outputClasses[i]), outputScores[i], detection));
         }
-        Trace.endSection();
+
+        final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
+        for (int i = 0; i < Math.min(pq.size(), MAX_RESULTS); ++i) {
+            recognitions.add(pq.poll());
+        }
+        Trace.endSection(); // "recognizeImage"
         return recognitions;
     }
 
     @Override
-    public void enableStatLogging(final boolean logStats) {}
-
-    @Override
-    public String getStatString() {
-        return "";
+    public void enableStatLogging(final boolean logStats) {
+        this.logStats = logStats;
     }
 
     @Override
-    public void close() {}
+    public String getStatString() {
+        return inferenceInterface.getStatString();
+    }
 
+    @Override
+    public void close() {
+        inferenceInterface.close();
+    }
 }

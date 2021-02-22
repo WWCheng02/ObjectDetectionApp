@@ -30,7 +30,7 @@ import com.example.myapplication.CameraActivity;
 public class MainActivity extends CameraActivity implements OnImageAvailableListener {
     private static int MODEL_IMAGE_INPUT_SIZE = 300;
     private static String LOGGING_TAG = MainActivity.class.getName();
-    private static String modelFilename="detect.tflite";
+    private static String modelFilename="file:///android_asset/frozen_inference_graph.pb";
     private static String labelFilename= "file:///android_asset/labelmap.txt";
     private float MIN_CONFIDENCE_SCORE=0.6f;
     private static int inputSize=300;
@@ -82,7 +82,8 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
         int cropSize = MODEL_IMAGE_INPUT_SIZE;
         try {
             //create a TF Object Detection model
-            classifier = TFObjectDetectionAPIModel.create(getAssets(),modelFilename, labelFilename, MODEL_IMAGE_INPUT_SIZE, TF_OD_API_IS_QUANTIZED);
+            classifier = TFObjectDetectionAPIModel.create(getAssets(),modelFilename, labelFilename, MODEL_IMAGE_INPUT_SIZE);
+
             cropSize= MODEL_IMAGE_INPUT_SIZE;
             Log.i(LOGGING_TAG, "Model initiated successfully"); //display message when model initiated successfully
             Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully

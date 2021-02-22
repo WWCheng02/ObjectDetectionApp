@@ -1,4 +1,0 @@
-???
-cloth_mask
-person
-
