@@ -86,7 +86,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
 
             cropSize= MODEL_IMAGE_INPUT_SIZE;
             Log.i(LOGGING_TAG, "Model initiated successfully"); //display message when model initiated successfully
-            Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully
+            //Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully
 
         } catch(IOException e) {
             e.printStackTrace();

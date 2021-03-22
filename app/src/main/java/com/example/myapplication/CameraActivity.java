@@ -93,7 +93,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
         playStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Click button", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(), "Click button", Toast.LENGTH_SHORT).show();
                 if (tts != null) {
                     if (tts.isSpeaking()) {
                         tts.stop(); //stop just stop the current recognition, so need shutdown
@@ -148,7 +148,14 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
             if(resultCode==RESULT_OK){
                 //get speech rate from previous activity
                 speechRate= data.getFloatExtra("speechRateSelected",1f);
-                Toast.makeText(getApplicationContext(), "Speech Rate :"+speechRate, Toast.LENGTH_SHORT).show();
+                String speed;
+                if(speechRate==0.5)
+                    speed="slow";
+                else if (speechRate==1.0)
+                    speed="normal";
+                else
+                    speed="fast";
+                Toast.makeText(getApplicationContext(), "Speech Rate :"+speed, Toast.LENGTH_SHORT).show();
                 //save data by edit shared preferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 //add data into shared preferences
@@ -157,13 +164,7 @@ public abstract class CameraActivity extends Activity implements OnImageAvailabl
                 editor.apply();
 
                 tts.setSpeechRate(speechRate);
-                String speed;
-                if(speechRate==0.5)
-                    speed="slow";
-                else if (speechRate==1.0)
-                    speed="normal";
-                else
-                    speed="fast";
+
                 tts.speak("Speech rate is "+speed, TextToSpeech.QUEUE_FLUSH,null);
             }
         }
