@@ -56,7 +56,7 @@ public class TFObjectDetectionAPIModel implements ImageClassifier {
         BufferedReader br = new BufferedReader(new InputStreamReader(labelInput));
         String line;
         while ((line = br.readLine()) != null) {
-            Log.w(LOGGING_TAG,line);
+            Log.w(LOGGING_TAG, line);
             model.labels.add(line);
         }
         br.close();

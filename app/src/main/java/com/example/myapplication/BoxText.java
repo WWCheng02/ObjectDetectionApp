@@ -18,7 +18,7 @@ public class BoxText {
     private final float textSize; //text size in pixels
 
     public BoxText(final float textSize) {
-        this(Color.BLUE, Color.BLACK, textSize);
+        this(Color.WHITE, Color.BLACK, textSize);
     }
 
     public BoxText(final int interiorColor, final int exteriorColor, final float textSize) {

@@ -85,7 +85,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
             classifier = TFObjectDetectionAPIModel.create(getAssets(),modelFilename, labelFilename, MODEL_IMAGE_INPUT_SIZE, TF_OD_API_IS_QUANTIZED);
             cropSize= MODEL_IMAGE_INPUT_SIZE;
             Log.i(LOGGING_TAG, "Model initiated successfully"); //display message when model initiated successfully
-            Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully
+            //Toast.makeText(getApplicationContext(), "Detector opened", Toast.LENGTH_SHORT).show(); //display toast when detector opened successfully
 
         } catch(IOException e) {
             e.printStackTrace();
@@ -196,7 +196,7 @@ public class MainActivity extends CameraActivity implements OnImageAvailableList
 
 
                 Paint paint = new Paint();
-                paint.setColor(Color.BLUE); //color of text
+                paint.setColor(Color.WHITE); //color of text
                 paint.setStyle(Paint.Style.STROKE); //set style
 
 
